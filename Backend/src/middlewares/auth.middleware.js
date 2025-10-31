@@ -13,6 +13,12 @@ async function authUser(req, res, next) {
 
     const user = await userModel.findById(decoded.id);
 
+    // --- THIS IS THE FIX ---
+    if (!user) {
+      return res.status(401).json({ message: "User not found" });
+    }
+    // -----------------------
+
     req.user = user;
 
     next();

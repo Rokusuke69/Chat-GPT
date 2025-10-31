@@ -31,7 +31,7 @@ async function registerUser(req, res) {
   res.cookie("token", token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
+    sameSite: "lax", // <-- CHANGED FROM "strict"
     maxAge: 86400000 // 1 day in milliseconds
   });
 
@@ -67,7 +67,7 @@ async function loginUser(req, res) {
   res.cookie("token", token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
+    sameSite: "lax", // <-- CHANGED FROM "strict"
     maxAge: 86400000 // 1 day in milliseconds
   });
   
