@@ -12,6 +12,7 @@ function initSocketServer(httpServer) {
       origin: "http://localhost:5173",
       allowedHeaders: ["Content-Type", "Authorization"],
       credentials: true,
+      methods: ["GET", "POST"], // <-- ADD THIS LINE
     },
   });
 
@@ -91,11 +92,11 @@ function initSocketServer(httpServer) {
             {
               text: `
 
-                        these are some previous messages from the chat, use them to generate a response
+                      these are some previous messages from the chat, use them to generate a response
 
-                        ${memory.map((item) => item.metadata.text).join("\n")}
-                        
-                        `,
+                      ${memory.map((item) => item.metadata.text).join("\n")}
+                      
+                      `,
             },
           ],
         },

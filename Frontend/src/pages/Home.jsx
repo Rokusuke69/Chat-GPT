@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom'; // <-- 1. IMPORT useNavigate
 import { io } from "socket.io-client";
 import ChatMobileBar from '../components/chat/ChatMobileBar.jsx';
 import ChatSidebar from '../components/chat/ChatSidebar.jsx';
@@ -22,6 +23,7 @@ import {
 
 const Home = () => {
   const dispatch = useDispatch();
+  const navigate = useNavigate(); // <-- 2. INITIALIZE useNavigate
   const chats = useSelector(state => state.chat.chats);
   const activeChatId = useSelector(state => state.chat.activeChatId);
   const input = useSelector(state => state.chat.input);
@@ -32,14 +34,7 @@ const Home = () => {
   const activeChat = chats.find(c => c.id === activeChatId) || null;
 
   const [ messages, setMessages ] = useState([
-    // {
-    //   type: 'user',
-    //   content: 'Hello, how can I help you today?'
-    // },
-    // {
-    //   type: 'ai',
-    //   content: 'Hi there! I need assistance with my account.'
-    // }
+    // ...
   ]);
 
   const handleNewChat = async () => {
@@ -65,10 +60,27 @@ const Home = () => {
       .then(response => {
         dispatch(setChats(response.data.chats.reverse()));
       })
+      .catch(err => { // <-- 3. ADDED CATCH BLOCK FOR AXIOS
+        if (err.response && err.response.status === 401) {
+          navigate("/login"); // Redirect to login if unauthorized
+        } else {
+          console.error("Error fetching chats:", err);
+        }
+      });
 
     const tempSocket = io("http://localhost:3000", {
       withCredentials: true,
     })
+
+    // <-- 4. ADDED ERROR LISTENER FOR SOCKET
+    tempSocket.on("connect_error", (err) => {
+      // Check if the error is an auth error from your middleware
+      if (err.message.includes("Authentication error")) {
+        navigate("/login");
+      } else {
+        console.error("Socket connection error:", err);
+      }
+    });
 
     tempSocket.on("ai-response", (messagePayload) => {
       console.log("Received AI response:", messagePayload);
@@ -83,13 +95,19 @@ const Home = () => {
 
     setSocket(tempSocket);
 
-  }, []);
+    // <-- 5. ADDED CLEANUP FUNCTION
+    return () => {
+      tempSocket.disconnect();
+    }
+
+  }, [dispatch, navigate]); // <-- 6. ADDED 'navigate' AND 'dispatch' TO DEPENDENCY ARRAY
 
   const sendMessage = async () => {
 
     const trimmed = input.trim();
     console.log("Sending message:", trimmed);
-    if (!trimmed || !activeChatId || isSending) return;
+    // <-- 7. ADDED !socket CHECK
+    if (!trimmed || !activeChatId || isSending || !socket) return; 
     dispatch(sendingStarted());
 
     const newMessages = [ ...messages, {
@@ -106,20 +124,11 @@ const Home = () => {
       chat: activeChatId,
       content: trimmed
     })
-
-    // try {
-    //   const reply = await fakeAIReply(trimmed);
-    //   dispatch(addAIMessage(activeChatId, reply));
-    // } catch {
-    //   dispatch(addAIMessage(activeChatId, 'Error fetching AI response.', true));
-    // } finally {
-    //   dispatch(sendingFinished());
-    // }
   }
 
   const getMessages = async (chatId) => {
 
-   const response = await  axios.get(`http://localhost:3000/api/chat/messages/${chatId}`, { withCredentials: true })
+   const response = await   axios.get(`http://localhost:3000/api/chat/messages/${chatId}`, { withCredentials: true })
 
    console.log("Fetched messages:", response.data.messages);
 
@@ -133,6 +142,7 @@ const Home = () => {
 
 return (
   <div className="chat-layout minimal">
+    {/* ... (Your JSX is fine, no changes needed here) ... */}
     <ChatMobileBar
       onToggleSidebar={() => setSidebarOpen(o => !o)}
       onNewChat={handleNewChat}
