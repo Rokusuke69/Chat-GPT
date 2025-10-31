@@ -23,7 +23,7 @@ app.use(cors(corsOptions));
 /* using middlewares */
 app.use(express.json());
 app.use(cookieParser()); // You need credentials:true in cors for this to work
-app.use(express.static(path.join(__dirname, "public")));
+app.use(express.static(path.join(__dirname, '../public')));
 
 /* Using Routes */
 app.use("/api/auth", authRoutes);
